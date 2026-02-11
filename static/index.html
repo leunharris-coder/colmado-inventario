@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Colmado IMS</title>
+
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --card: #ffffff;
+        --primary: #2563eb;
+        --danger: #dc2626;
+        --muted: #6b7280;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto;
+        background: var(--bg);
+      }
+
+      header {
+        background: var(--primary);
+        color: white;
+        padding: 14px;
+        text-align: center;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .card {
+        background: var(--card);
+        margin: 12px;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 10px;
+        font-size: 1rem;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        box-sizing: border-box;
+        margin-top: 8px;
+      }
+
+      label {
+        display: block;
+        margin-top: 8px;
+      }
+
+      button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+
+      button.secondary {
+        background: #374151;
+      }
+
+      button.danger {
+        background: var(--danger);
+      }
+
+      .tabs {
+        display: flex;
+        overflow-x: auto;
+        background: white;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .tab {
+        padding: 12px 16px;
+        cursor: pointer;
+        white-space: nowrap;
+        margin: 0;
+      }
+
+      .tab.active {
+        border-bottom: 3px solid var(--primary);
+        font-weight: 600;
+      }
+
+      .list .rowcard {
+        background: var(--card);
+        margin: 8px 0;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .badge-low {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(220, 38, 38, 0.12);
+        color: var(--danger);
+        font-weight: 700;
+        font-size: 0.85rem;
+        margin-left: 6px;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 640px) {
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header id="title">Colmado Inventory</header>
+
+    <!-- LOGIN -->
+    <div id="loginView" class="card">
+      <h3 id="t_login">Login / Iniciar sesión</h3>
+      <label id="t_user">Username / Usuario</label>
+      <input id="username" autocomplete="username" />
+      <label id="t_pin">PIN</label>
+      <input
+        id="pin"
+        type="password"
+        inputmode="numeric"
+        autocomplete="current-password"
+      />
+      <button onclick="login()">Login</button>
+      <p id="loginMsg" class="muted"></p>
+    </div>
+
+    <!-- APP -->
+    <div id="appView" class="hidden">
+      <div class="tabs">
+        <div
+          class="tab active"
+          id="tabSales"
+          onclick="safeShowTab('sales', this)"
+        >
+          Sales
+        </div>
+        <div
+          class="tab"
+          id="tabInventory"
+          onclick="safeShowTab('inventory', this)"
+        >
+          Inventory
+        </div>
+        <div class="tab" id="tabCash" onclick="safeShowTab('cash', this)">
+          Cash
+        </div>
+        <div class="tab" id="tabUsers" onclick="safeShowTab('users', this)">
+          Users
+        </div>
+        <div
+          class="tab"
+          id="tabPurchases"
+          onclick="safeShowTab('purchases', this)"
+        >
+          Purchases
+        </div>
+        <div class="tab" id="tabReports" onclick="safeShowTab('reports', this)">
+          Reports
+        </div>
+        <div
+          class="tab"
+          id="tabChangePin"
+          onclick="safeShowTab('changePin', this)"
+        >
+          Change PIN
+        </div>
+        <div class="tab" onclick="logout()">Logout</div>
+      </div>
+
+      <!-- SALES -->
+      <div id="sales" class="card">
+        <h3>Sales / Ventas</h3>
+        <label>Product / Producto</label>
+        <select id="saleProduct"></select>
+
+        <label>Qty / Cantidad</label>
+        <input id="saleQty" type="number" placeholder="Qty" />
+
+        <button onclick="addSale()">Add Sale</button>
+        <p id="saleMsg" class="muted"></p>
+        <p class="muted">
+          Note: Sales are blocked if there is not enough inventory.
+        </p>
+      </div>
+
+      <!-- INVENTORY -->
+      <div id="inventory" class="card hidden">
+        <h3>Inventory / Inventario</h3>
+        <div id="inventoryList" class="list"></div>
+      </div>
+
+      <!-- CASH (Manager only) -->
+      <div id="cash" class="card hidden">
+        <h3>Cash / Efectivo</h3>
+        <input id="cashAmount" type="number" placeholder="Amount (RD$)" />
+        <input id="cashNote" placeholder="Note / Nota" />
+        <button onclick="addCash()">Save</button>
+        <div id="cashList" class="list" style="margin-top: 12px"></div>
+      </div>
+
+      <!-- USERS (Manager only) -->
+      <div id="users" class="card hidden">
+        <h3>Users / Usuarios</h3>
+
+        <div class="grid2">
+          <div>
+            <label>Username</label>
+            <input id="newUser" placeholder="e.g. empleado1" />
+          </div>
+          <div>
+            <label>PIN (6 digits)</label>
+            <input
+              id="newPin"
+              type="password"
+              inputmode="numeric"
+              placeholder="123456"
+            />
+          </div>
+        </div>
+
+        <label>Unit ID</label>
+        <input id="newUnit" placeholder="e.g. E-001" />
+
+        <button onclick="addUser()">Add User</button>
+
+        <div id="userList" class="list" style="margin-top: 12px"></div>
+
+        <p class="muted">
+          To allow an employee to do Purchases, set can_purchase=1 using the
+          console snippet.
+        </p>
+      </div>
+
+      <!-- PURCHASES (Bulk) -->
+      <div id="purchases" class="card hidden">
+        <h3>Purchases (Bulk) / Compras (Por lote)</h3>
+
+        <button class="secondary" onclick="addPurchaseRow()">
+          + Add Row / Agregar línea
+        </button>
+
+        <div id="purchaseRows" class="list" style="margin-top: 12px"></div>
+
+        <button onclick="submitBulkPurchases()">Save All / Guardar todo</button>
+
+        <p id="purchaseMsg" class="muted"></p>
+      </div>
+
+      <!-- REPORTS (Manager only) -->
+      <div id="reports" class="card hidden">
+        <h3>Reports / Reportes</h3>
+
+        <label>Date / Fecha</label>
+        <input id="reportDate" type="date" />
+
+        <button onclick="runDailyReport()">Run Daily Report</button>
+
+        <div id="reportOut" class="list" style="margin-top: 12px"></div>
+      </div>
+
+      <!-- CHANGE PIN -->
+      <div id="changePin" class="card hidden">
+        <h3>Change PIN / Cambiar PIN</h3>
+
+        <label>Old PIN / PIN anterior</label>
+        <input
+          id="oldPin"
+          type="password"
+          inputmode="numeric"
+          placeholder="6 digits"
+        />
+
+        <label>New PIN / PIN nuevo</label>
+        <input
+          id="newPinSelf"
+          type="password"
+          inputmode="numeric"
+          placeholder="6 digits"
+        />
+
+        <button onclick="changeMyPin()">Update PIN</button>
+
+        <p id="pinMsg" class="muted"></p>
+      </div>
+    </div>
+
+    <script>
+      let token = "";
+      let role = "";
+
+      let PRODUCTS = [];
+      let purchaseRowState = [{ product_id: "", qty: "", cost: "" }];
+
+      const MAIN_SECTIONS = [
+        "sales",
+        "inventory",
+        "cash",
+        "users",
+        "purchases",
+        "reports",
+        "changePin",
+      ];
+
+      async function api(path, opts = {}) {
+        const res = await fetch(path, {
+          ...opts,
+          headers: {
+            "Content-Type": "application/json",
+            "X-User": token,
+            ...(opts.headers || {}),
+          },
+        });
+
+        let data = null;
+        try {
+          data = await res.json();
+        } catch (e) {}
+
+        if (!res.ok) {
+          const msg =
+            data && (data.detail || data.message)
+              ? data.detail || data.message
+              : "Request failed";
+          throw new Error(msg);
+        }
+        return data;
+      }
+
+      // Hard-hide (cannot be shown by removing .hidden)
+      function hideSection(id) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.add("hidden");
+          el.style.display = "none";
+        }
+      }
+
+      // Re-enable a section (manager)
+      function showSection(id) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.style.display = "";
+        }
+      }
+
+      // Prevent showing hard-hidden sections (manual console switching)
+      function safeShowTab(id, tabEl) {
+        const section = document.getElementById(id);
+        if (!section || section.style.display === "none") {
+          showTab("sales", document.getElementById("tabSales"));
+          return;
+        }
+        showTab(id, tabEl);
+      }
+
+      function setActiveTab(tabEl) {
+        document
+          .querySelectorAll(".tabs .tab")
+          .forEach((t) => t.classList.remove("active"));
+        if (tabEl) tabEl.classList.add("active");
+      }
+
+      function showTab(id, tabEl) {
+        const target = document.getElementById(id);
+        if (!target || target.style.display === "none") return;
+
+        MAIN_SECTIONS.forEach((secId) => {
+          const el = document.getElementById(secId);
+          if (el) el.classList.add("hidden");
+        });
+
+        target.classList.remove("hidden");
+        setActiveTab(tabEl);
+
+        if (id === "cash") loadCash();
+        if (id === "users") loadUsers();
+        if (id === "inventory") loadProducts();
+        if (id === "purchases") renderPurchaseRows();
+      }
+
+      function login() {
+        loginMsg.textContent = "";
+
+        fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: username.value,
+            pin: pin.value,
+          }),
+        })
+          .then((r) => {
+            if (!r.ok) throw new Error("Login failed");
+            return r.json();
+          })
+          .then((d) => {
+            token = d.token;
+            role = d.role;
+
+            loginView.classList.add("hidden");
+            appView.classList.remove("hidden");
+
+            if (role !== "manager") {
+              // Hide manager-only tabs
+              tabUsers.style.display = "none";
+              tabCash.style.display = "none";
+              tabReports.style.display = "none";
+
+              // Hard-hide manager-only sections
+              hideSection("users");
+              hideSection("cash");
+              hideSection("reports");
+
+              // Default: hide purchases until permission is confirmed
+              tabPurchases.style.display = "none";
+              hideSection("purchases");
+
+              // Purchases permission check for employees (including empleado1)
+              api("/api/me").then((me) => {
+                if (me.can_purchase === 1) {
+                  tabPurchases.style.display = "";
+                  showSection("purchases");
+                } else {
+                  tabPurchases.style.display = "none";
+                  hideSection("purchases");
+                }
+              });
+            } else {
+              // Show manager tabs
+              tabUsers.style.display = "";
+              tabCash.style.display = "";
+              tabPurchases.style.display = "";
+              tabReports.style.display = "";
+
+              // Re-enable sections
+              showSection("users");
+              showSection("cash");
+              showSection("purchases");
+              showSection("reports");
+            }
+
+            reportDate.value = new Date().toISOString().slice(0, 10);
+
+            loadProducts();
+            safeShowTab("sales", document.getElementById("tabSales"));
+          })
+          .catch(() => {
+            loginMsg.textContent = "Login failed";
+          });
+      }
+
+      function logout() {
+        location.reload();
+      }
+
+      function loadProducts() {
+        api("/api/products")
+          .then((data) => {
+            PRODUCTS = data;
+
+            saleProduct.innerHTML = "";
+            inventoryList.innerHTML = "";
+
+            data.forEach((p) => {
+              const label = `${p.name_es || p.name_en} (Qty: ${p.qty})`;
+
+              const opt = document.createElement("option");
+              opt.value = p.id;
+              opt.textContent = label;
+              saleProduct.appendChild(opt);
+
+              const div = document.createElement("div");
+              div.className = "rowcard";
+
+              const lowBadge = p.is_low
+                ? `<span class="badge-low">LOW / BAJO</span>`
+                : "";
+
+              div.innerHTML = `
+                <div><strong>${p.name_es || ""}</strong> <span class="muted">${p.name_en || ""}</span> ${lowBadge}</div>
+                <div class="muted">Qty: <strong>${p.qty}</strong> | Reorder: ${p.reorder_level}</div>
+              `;
+              inventoryList.appendChild(div);
+            });
+
+            renderPurchaseRows();
+          })
+          .catch((err) => console.error(err));
+      }
+
+      function addSale() {
+        saleMsg.textContent = "";
+
+        const qty = Number(saleQty.value);
+        if (!qty || qty <= 0) {
+          saleMsg.textContent = "Qty must be > 0 / Cantidad debe ser > 0";
+          return;
+        }
+
+        api("/api/sales", {
+          method: "POST",
+          body: JSON.stringify({
+            product_id: Number(saleProduct.value),
+            qty,
+          }),
+        })
+          .then(() => {
+            saleMsg.textContent = "Saved ✅";
+            saleQty.value = "";
+            loadProducts();
+          })
+          .catch((err) => {
+            saleMsg.textContent = err.message || "Error";
+          });
+      }
+
+      function addCash() {
+        api("/api/cash", {
+          method: "POST",
+          body: JSON.stringify({
+            amount: Number(cashAmount.value),
+            note: cashNote.value,
+          }),
+        })
+          .then(() => {
+            cashAmount.value = "";
+            cashNote.value = "";
+            loadCash();
+          })
+          .catch((err) => alert(err.message || "Error saving cash"));
+      }
+
+      function loadCash() {
+        api("/api/cash")
+          .then((data) => {
+            cashList.innerHTML = "";
+            data.forEach((c) => {
+              const d = document.createElement("div");
+              d.className = "rowcard";
+              d.textContent = `RD$ ${c.amount} – ${c.note}`;
+              cashList.appendChild(d);
+            });
+          })
+          .catch((err) => console.error(err));
+      }
+
+      function addUser() {
+        api("/api/users", {
+          method: "POST",
+          body: JSON.stringify({
+            username: newUser.value,
+            pin: newPin.value,
+            unit_id: newUnit.value,
+          }),
+        })
+          .then(() => {
+            newUser.value = "";
+            newPin.value = "";
+            newUnit.value = "";
+            loadUsers();
+          })
+          .catch((err) => alert(err.message || "Error adding user"));
+      }
+
+      function loadUsers() {
+        api("/api/users")
+          .then((data) => {
+            userList.innerHTML = "";
+            data.forEach((u) => {
+              const d = document.createElement("div");
+              d.className = "rowcard";
+              d.textContent = `${u.username} (${u.role})`;
+              userList.appendChild(d);
+            });
+          })
+          .catch((err) => console.error(err));
+      }
+
+      function runDailyReport() {
+        const d = reportDate.value || new Date().toISOString().slice(0, 10);
+        reportOut.innerHTML = "";
+
+        api(`/api/reports/daily?date=${encodeURIComponent(d)}`)
+          .then((r) => {
+            const t = r.totals || {};
+
+            const header = document.createElement("div");
+            header.className = "rowcard";
+            header.innerHTML = `
+              <div><strong>Daily Totals (${r.date})</strong></div>
+              <div class="muted">Revenue: RD$ ${t.revenue || 0}</div>
+              <div class="muted">Items Sold: ${t.items_sold || 0}</div>
+              <div class="muted">Transactions: ${t.transactions || 0}</div>
+            `;
+            reportOut.appendChild(header);
+
+            const emp = document.createElement("div");
+            emp.className = "rowcard";
+            emp.innerHTML = `<div><strong>Sales by Employee / Ventas por empleado</strong></div>`;
+            (r.per_employee || []).forEach((e) => {
+              const line = document.createElement("div");
+              line.className = "muted";
+              line.textContent = `${e.employee} (${e.unit_id}) — RD$ ${e.revenue || 0} — items ${e.items_sold || 0} — tx ${e.transactions || 0}`;
+              emp.appendChild(line);
+            });
+            reportOut.appendChild(emp);
+
+            const low = document.createElement("div");
+            low.className = "rowcard";
+            low.innerHTML = `<div><strong>Low Stock / Bajo inventario</strong></div>`;
+            (r.low_stock || []).forEach((p) => {
+              const line = document.createElement("div");
+              line.className = "muted";
+              line.textContent = `${p.name_es || p.name_en} — Qty ${p.qty} (Reorder ${p.reorder_level})`;
+              low.appendChild(line);
+            });
+            reportOut.appendChild(low);
+          })
+          .catch((err) => {
+            reportOut.innerHTML = `<div class="rowcard">Error: ${err.message}</div>`;
+          });
+      }
+
+      function changeMyPin() {
+        pinMsg.textContent = "";
+
+        const old_pin = (oldPin.value || "").trim();
+        const new_pin = (newPinSelf.value || "").trim();
+
+        if (!/^\d{6}$/.test(new_pin)) {
+          pinMsg.textContent =
+            "New PIN must be 6 digits / PIN nuevo debe tener 6 dígitos";
+          return;
+        }
+        if (!old_pin) {
+          pinMsg.textContent = "Old PIN required / PIN anterior requerido";
+          return;
+        }
+
+        api("/api/me/change-pin", {
+          method: "POST",
+          body: JSON.stringify({ old_pin, new_pin }),
+        })
+          .then(() => {
+            pinMsg.textContent = "PIN updated successfully ✅";
+            oldPin.value = "";
+            newPinSelf.value = "";
+          })
+          .catch((err) => {
+            pinMsg.textContent = err.message;
+          });
+      }
+
+      function addPurchaseRow() {
+        purchaseRowState.push({ product_id: "", qty: "", cost: "" });
+        renderPurchaseRows();
+      }
+
+      function updatePurchaseRow(idx, field, value) {
+        purchaseRowState[idx][field] = value;
+      }
+
+      function removePurchaseRow(idx) {
+        purchaseRowState.splice(idx, 1);
+        if (purchaseRowState.length === 0)
+          purchaseRowState = [{ product_id: "", qty: "", cost: "" }];
+        renderPurchaseRows();
+      }
+
+      // Quick-pick handler: expects "... — ID:123"
+      function onQuickPickInput(idx, text) {
+        const m = String(text).match(/ID:(\d+)\s*$/);
+        if (m) {
+          updatePurchaseRow(idx, "product_id", m[1]);
+        } else {
+          updatePurchaseRow(idx, "product_id", "");
+        }
+      }
+
+      // BULK PURCHASE ROWS with quick-pick searchable picker
+      function renderPurchaseRows() {
+        const wrap = document.getElementById("purchaseRows");
+        if (!wrap) return;
+
+        const purchasesSection = document.getElementById("purchases");
+        if (purchasesSection && purchasesSection.style.display === "none")
+          return;
+
+        wrap.innerHTML = "";
+
+        purchaseRowState.forEach((row, idx) => {
+          const div = document.createElement("div");
+          div.className = "card";
+
+          const dlId = `productsDL_${idx}`;
+
+          const selected = PRODUCTS.find(
+            (p) => String(p.id) === String(row.product_id),
+          );
+          const selectedLabel = selected
+            ? `${selected.name_es || selected.name_en} (Qty: ${selected.qty}) — ID:${selected.id}`
+            : "";
+
+          div.innerHTML = `
+            <label>Product (type to search)</label>
+            <input
+              list="${dlId}"
+              placeholder="Type name… then pick from list"
+              value="${selectedLabel.replace(/"/g, "&quot;")}"
+              oninput="onQuickPickInput(${idx}, this.value)"
+            />
+            <datalist id="${dlId}">
+              ${PRODUCTS.map((p) => {
+                const label = `${p.name_es || p.name_en} (Qty: ${p.qty}) — ID:${p.id}`;
+                return `<option value="${label.replace(/"/g, "&quot;")}"></option>`;
+              }).join("")}
+            </datalist>
+
+            <label>Qty</label>
+            <input type="number" placeholder="Qty"
+              value="${row.qty}"
+              oninput="updatePurchaseRow(${idx}, 'qty', this.value)" />
+
+            <label>Cost (RD$)</label>
+            <input type="number" placeholder="Cost RD$"
+              value="${row.cost}"
+              oninput="updatePurchaseRow(${idx}, 'cost', this.value)" />
+
+            <button class="danger" onclick="removePurchaseRow(${idx})">Remove</button>
+          `;
+
+          wrap.appendChild(div);
+        });
+      }
+
+      function submitBulkPurchases() {
+        purchaseMsg.textContent = "";
+
+        const items = purchaseRowState
+          .map((r) => ({
+            product_id: Number(r.product_id),
+            qty: Number(r.qty),
+            cost: Number(r.cost || 0),
+          }))
+          .filter((i) => i.product_id && i.qty > 0);
+
+        if (items.length === 0) {
+          purchaseMsg.textContent = "Add at least one line";
+          return;
+        }
+
+        api("/api/purchases/bulk", {
+          method: "POST",
+          body: JSON.stringify({ items }),
+        })
+          .then((r) => {
+            purchaseMsg.textContent = `Saved ${r.count} items ✅`;
+            purchaseRowState = [{ product_id: "", qty: "", cost: "" }];
+            renderPurchaseRows();
+            loadProducts();
+          })
+          .catch((err) => {
+            purchaseMsg.textContent = err.message;
+          });
+      }
+
+      // Optional: run this as manager in console to enable empleado1 purchase permission:
+      // api("/api/users").then(list => {
+      //   const u = list.find(x => x.username === "empleado1");
+      //   return api("/api/users/set-purchase-permission", {
+      //     method:"POST",
+      //     body: JSON.stringify({user_id: u.id, can_purchase: 1})
+      //   });
+      // })
+    </script>
+  </body>
+</html>
