@@ -1,4 +1,3 @@
-DB_FILE = "/home/colmado/data/colmado.db"
 import os
 import re
 import sqlite3
