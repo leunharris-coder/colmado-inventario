@@ -1,3 +1,4 @@
+DB_FILE = "/home/colmado/data/colmado.db"
 import os
 import re
 import sqlite3
@@ -13,7 +14,7 @@ from passlib.context import CryptContext
 
 # ---------- Paths ----------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_FILE = os.path.join(BASE_DIR, "colmado.db")
+DB_FILE = "/home/colmado/data/colmado.db"
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 INDEX_HTML = os.path.join(STATIC_DIR, "index.html")
 
